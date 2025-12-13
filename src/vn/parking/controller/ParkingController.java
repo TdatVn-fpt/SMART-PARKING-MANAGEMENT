@@ -20,7 +20,7 @@ public class ParkingController {
     
     public ParkingController() {
         this.repository = new ParkingRepository();
-        this.billingService = new BillingService();
+        this.billingService = new BillingService(repository);
         this.parkingService = new ParkingService(repository, billingService);
         this.scanner = new Scanner(System.in);
         this.view = new ParkingView(scanner, repository);

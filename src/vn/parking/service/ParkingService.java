@@ -126,16 +126,17 @@ public class ParkingService {
         // Tính phí với logic mới
         long fee = billingService.calculateFee(vehicle, exitTime, entryTime);
         
-        // Nếu là vé tháng và phải thu tiền (fee > 0), cập nhật lastPaidMonth
+        // Nếu là vé tháng và phải thu tiền (fee > 0), cập nhật lịch sử đóng tiền
         if (vehicle.hasMonthlyCard() && fee > 0) {
             String currentMonth = billingService.getCurrentMonth(exitTime);
-            vehicle.setLastPaidMonth(currentMonth);
-            repository.saveVehicle(vehicle);
-            repository.saveToFile(); // Lưu ngay lập tức
+            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử
         }
         
+        // Lấy lastPaidMonth từ sổ cái để hiển thị
+        String lastPaidMonth = repository.getLastPaidMonth(plate);
+        
         // In hóa đơn
-        printInvoice(plate, entryTime, exitTime, duration, fee, vehicle.hasMonthlyCard(), vehicle.getLastPaidMonth());
+        printInvoice(plate, entryTime, exitTime, duration, fee, vehicle.hasMonthlyCard(), lastPaidMonth);
         
         // Xóa ticket khỏi repository
         repository.removeTicket(plate);
@@ -177,19 +178,20 @@ public class ParkingService {
         // Tính phí với logic mới (sử dụng fakeCheckoutTime cho vé tháng)
         long fee = billingService.calculateFee(vehicle, fakeCheckoutTime, fakeEntryTime);
         
-        // Nếu là vé tháng và phải thu tiền (fee > 0), cập nhật lastPaidMonth
+        // Nếu là vé tháng và phải thu tiền (fee > 0), cập nhật lịch sử đóng tiền
         if (vehicle.hasMonthlyCard() && fee > 0) {
             String currentMonth = billingService.getCurrentMonth(fakeCheckoutTime);
-            vehicle.setLastPaidMonth(currentMonth);
-            repository.saveVehicle(vehicle);
-            repository.saveToFile(); // Lưu ngay lập tức
+            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử
         }
         
         LocalDateTime exitTime = LocalDateTime.now();
         
+        // Lấy lastPaidMonth từ sổ cái để hiển thị
+        String lastPaidMonth = repository.getLastPaidMonth(plate);
+        
         // In hóa đơn simulation với thông tin chi tiết
         printSimulationInvoice(plate, fakeEntryTime, exitTime, months, days, totalDays, fee, 
-                vehicle.hasMonthlyCard(), vehicle.getLastPaidMonth());
+                vehicle.hasMonthlyCard(), lastPaidMonth);
         
         // Xóa ticket khỏi repository
         repository.removeTicket(plate);
@@ -227,20 +229,21 @@ public class ParkingService {
         // Tính phí đỗ xe (theo công thức mới)
         long parkingFee = billingService.calculateFee(vehicle, exitTime, entryTime);
         
-        // Nếu là vé tháng và phải thu tiền (parkingFee > 0), cập nhật lastPaidMonth
+        // Nếu là vé tháng và phải thu tiền (parkingFee > 0), cập nhật lịch sử đóng tiền
         if (vehicle.hasMonthlyCard() && parkingFee > 0) {
             String currentMonth = billingService.getCurrentMonth(exitTime);
-            vehicle.setLastPaidMonth(currentMonth);
-            repository.saveVehicle(vehicle);
-            repository.saveToFile(); // Lưu ngay lập tức
+            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử
         }
         
         // Tổng phí = Phạt mất vé + Phí đỗ xe
         long totalFee = LOST_TICKET_FINE + parkingFee;
         
+        // Lấy lastPaidMonth từ sổ cái để hiển thị
+        String lastPaidMonth = repository.getLastPaidMonth(plate);
+        
         // In hóa đơn mất vé
         printLostTicketInvoice(plate, entryTime, exitTime, duration, parkingFee, totalFee, 
-                vehicle.hasMonthlyCard(), vehicle.getLastPaidMonth());
+                vehicle.hasMonthlyCard(), lastPaidMonth);
         
         // Xóa ticket khỏi repository
         repository.removeTicket(plate);

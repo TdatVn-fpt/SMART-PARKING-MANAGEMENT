@@ -1,6 +1,7 @@
 package vn.parking.service;
 
 import vn.parking.model.Vehicle;
+import vn.parking.repository.ParkingRepository;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -9,10 +10,16 @@ import java.time.format.DateTimeFormatter;
  */
 public class BillingService {
     
+    private ParkingRepository repository;
+    
     private static final int FREE_HOURS = 24;           // 24 giờ đầu miễn phí
     private static final int FEE_PER_DAY = 5000;        // Phí mỗi ngày: 5.000 VNĐ
     private static final long MONTHLY_TICKET_FEE = 50000; // Phí vé tháng: 50.000 VNĐ
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MM/yyyy");
+    
+    public BillingService(ParkingRepository repository) {
+        this.repository = repository;
+    }
     
     /**
      * Tính phí đỗ xe dựa trên Vehicle và thời gian check-out
@@ -25,7 +32,7 @@ public class BillingService {
     public long calculateFee(Vehicle vehicle, LocalDateTime checkoutTime, LocalDateTime entryTime) {
         if (vehicle.hasMonthlyCard()) {
             // Logic VÉ THÁNG: Chỉ thu 1 lần/tháng
-            return calculateMonthlyTicketFee(vehicle, checkoutTime);
+            return calculateMonthlyTicketFee(vehicle.getPlate(), checkoutTime);
         } else {
             // Logic VÉ LƯỢT
             return calculateGuestTicketFee(entryTime, checkoutTime);
@@ -35,16 +42,15 @@ public class BillingService {
     /**
      * Tính phí vé tháng (One-Time Payment per Month)
      * - Lấy tháng check-out (Format "MM/yyyy")
-     * - So sánh với vehicle.getLastPaidMonth()
-     * - Nếu trùng -> 0 VNĐ (đã đóng)
-     * - Nếu khác hoặc null -> 50.000 VNĐ (chưa đóng)
+     * - Lấy lastPaidMonth từ repository (Sổ cái lịch sử)
+     * - So sánh: Nếu trùng -> 0 VNĐ (đã đóng), Nếu khác -> 50.000 VNĐ (chưa đóng)
      */
-    private long calculateMonthlyTicketFee(Vehicle vehicle, LocalDateTime checkoutTime) {
+    private long calculateMonthlyTicketFee(String plate, LocalDateTime checkoutTime) {
         String currentMonth = checkoutTime.format(MONTH_FORMATTER);
-        String lastPaidMonth = vehicle.getLastPaidMonth();
+        String recordedMonth = repository.getLastPaidMonth(plate); // Lấy từ sổ cái
         
         // Trường hợp 1: Trùng khớp -> Đã đóng tiền tháng này
-        if (currentMonth.equals(lastPaidMonth)) {
+        if (currentMonth.equals(recordedMonth)) {
             return 0;
         }
         

@@ -16,12 +16,17 @@ public class ParkingRepository {
     // Map lưu trữ vehicle theo biển số xe
     private Map<String, Vehicle> vehicles;
     
+    // Map lưu trữ lịch sử đóng tiền vé tháng (Key: Biển số, Value: Tháng đã đóng gần nhất)
+    private Map<String, String> monthlyPaymentHistory;
+    
     private static final String DEFAULT_FILENAME = "parking_data.csv";
+    private static final String MONTHLY_HISTORY_FILENAME = "monthly_history.csv";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     public ParkingRepository() {
         this.ticketsByPlate = new HashMap<>();
         this.vehicles = new HashMap<>();
+        this.monthlyPaymentHistory = new HashMap<>();
     }
     
     /**
@@ -337,6 +342,109 @@ public class ParkingRepository {
      */
     public void loadFromFile() {
         loadFromFile(DEFAULT_FILENAME);
+        loadMonthlyHistory(); // Load lịch sử đóng tiền khi khởi động
+    }
+    
+    /**
+     * Đọc lịch sử đóng tiền vé tháng từ file monthly_history.csv
+     * Format: LicensePlate,LastPaidMonth
+     */
+    public void loadMonthlyHistory() {
+        File file = new File(MONTHLY_HISTORY_FILENAME);
+        if (!file.exists()) {
+            System.out.println("ℹ File lịch sử đóng tiền không tồn tại: " + MONTHLY_HISTORY_FILENAME + " (Sẽ tạo mới khi có dữ liệu)");
+            return;
+        }
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(MONTHLY_HISTORY_FILENAME))) {
+            String headerLine = reader.readLine(); // Bỏ qua header
+            if (headerLine == null) {
+                return;
+            }
+            
+            int count = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                
+                try {
+                    String[] parts = line.split(",");
+                    if (parts.length < 2) continue;
+                    
+                    String plate = parts[0].trim();
+                    String lastPaidMonth = parts[1].trim();
+                    
+                    if (!plate.isEmpty() && !lastPaidMonth.isEmpty()) {
+                        monthlyPaymentHistory.put(plate, lastPaidMonth);
+                        count++;
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ Lỗi khi đọc dòng lịch sử: " + line + " - " + e.getMessage());
+                }
+            }
+            
+            System.out.println("✓ Đã tải " + count + " bản ghi lịch sử đóng tiền từ file: " + MONTHLY_HISTORY_FILENAME);
+        } catch (IOException e) {
+            System.err.println("❌ Lỗi khi đọc file lịch sử: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Lưu lịch sử đóng tiền vé tháng ra file monthly_history.csv
+     * Format: LicensePlate,LastPaidMonth
+     */
+    public void saveMonthlyHistory() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(MONTHLY_HISTORY_FILENAME, false))) {
+            // Ghi header
+            writer.println("LicensePlate,LastPaidMonth");
+            
+            // Ghi dữ liệu
+            for (Map.Entry<String, String> entry : monthlyPaymentHistory.entrySet()) {
+                writer.printf("%s,%s%n", entry.getKey(), entry.getValue());
+            }
+            
+            System.out.println("✓ Đã lưu lịch sử đóng tiền vào file: " + MONTHLY_HISTORY_FILENAME);
+        } catch (IOException e) {
+            System.err.println("❌ Lỗi khi lưu file lịch sử: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Cập nhật trạng thái đóng tiền vé tháng cho một biển số
+     * @param plate Biển số xe
+     * @param month Tháng đã đóng (Format: "MM/yyyy")
+     */
+    public void updatePaymentStatus(String plate, String month) {
+        if (plate == null || month == null || plate.isEmpty() || month.isEmpty()) {
+            return;
+        }
+        
+        monthlyPaymentHistory.put(plate, month);
+        saveMonthlyHistory(); // Lưu ngay lập tức
+    }
+    
+    /**
+     * Lấy tháng đã đóng tiền gần nhất của một biển số
+     * @param plate Biển số xe
+     * @return Tháng đã đóng (Format: "MM/yyyy") hoặc null nếu chưa đóng
+     */
+    public String getLastPaidMonth(String plate) {
+        if (plate == null || plate.isEmpty()) {
+            return null;
+        }
+        
+        // Tìm kiếm với chuẩn hóa để đảm bảo tìm đúng
+        String normalizedPlate = normalizePlate(plate);
+        
+        for (Map.Entry<String, String> entry : monthlyPaymentHistory.entrySet()) {
+            String storedPlate = entry.getKey();
+            String normalizedStored = normalizePlate(storedPlate);
+            if (normalizedStored.equals(normalizedPlate)) {
+                return entry.getValue();
+            }
+        }
+        
+        return null;
     }
 }
 
