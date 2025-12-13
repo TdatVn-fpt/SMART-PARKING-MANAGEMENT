@@ -1,0 +1,89 @@
+package vn.parking.service;
+
+import vn.parking.model.Vehicle;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+/**
+ * Service xử lý logic tính phí đỗ xe
+ */
+public class BillingService {
+    
+    private static final int FREE_HOURS = 24;           // 24 giờ đầu miễn phí
+    private static final int FEE_PER_DAY = 5000;        // Phí mỗi ngày: 5.000 VNĐ
+    private static final long MONTHLY_TICKET_FEE = 50000; // Phí vé tháng: 50.000 VNĐ
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MM/yyyy");
+    
+    /**
+     * Tính phí đỗ xe dựa trên Vehicle và thời gian check-out
+     * 
+     * @param vehicle Xe cần tính phí
+     * @param checkoutTime Thời gian check-out (để xác định tháng cho vé tháng)
+     * @param entryTime Thời gian vào bãi
+     * @return Tổng phí phải trả (VNĐ)
+     */
+    public long calculateFee(Vehicle vehicle, LocalDateTime checkoutTime, LocalDateTime entryTime) {
+        if (vehicle.hasMonthlyCard()) {
+            // Logic VÉ THÁNG: Chỉ thu 1 lần/tháng
+            return calculateMonthlyTicketFee(vehicle, checkoutTime);
+        } else {
+            // Logic VÉ LƯỢT
+            return calculateGuestTicketFee(entryTime, checkoutTime);
+        }
+    }
+    
+    /**
+     * Tính phí vé tháng (One-Time Payment per Month)
+     * - Lấy tháng check-out (Format "MM/yyyy")
+     * - So sánh với vehicle.getLastPaidMonth()
+     * - Nếu trùng -> 0 VNĐ (đã đóng)
+     * - Nếu khác hoặc null -> 50.000 VNĐ (chưa đóng)
+     */
+    private long calculateMonthlyTicketFee(Vehicle vehicle, LocalDateTime checkoutTime) {
+        String currentMonth = checkoutTime.format(MONTH_FORMATTER);
+        String lastPaidMonth = vehicle.getLastPaidMonth();
+        
+        // Trường hợp 1: Trùng khớp -> Đã đóng tiền tháng này
+        if (currentMonth.equals(lastPaidMonth)) {
+            return 0;
+        }
+        
+        // Trường hợp 2: Khác nhau hoặc null -> Chưa đóng
+        return MONTHLY_TICKET_FEE;
+    }
+    
+    /**
+     * Tính phí vé lượt (Guest Ticket)
+     * - 24h đầu tiên: 0 VNĐ
+     * - Từ ngày thứ 2: Mỗi ngày 5.000 VNĐ
+     * - Công thức: TotalDays = Math.ceil(duration_hours / 24.0)
+     *   Nếu TotalDays <= 1: Phí = 0
+     *   Ngược lại: (TotalDays - 1) * 5.000
+     */
+    private long calculateGuestTicketFee(LocalDateTime entryTime, LocalDateTime checkoutTime) {
+        long hours = java.time.temporal.ChronoUnit.HOURS.between(entryTime, checkoutTime);
+        
+        // 24h đầu tiên: Miễn phí
+        if (hours <= FREE_HOURS) {
+            return 0;
+        }
+        
+        // Tính số ngày (làm tròn lên)
+        double totalDays = Math.ceil(hours / 24.0);
+        
+        // Ngày đầu tiên miễn phí, từ ngày thứ 2 trở đi tính phí
+        if (totalDays <= 1) {
+            return 0;
+        }
+        
+        return (long)((totalDays - 1) * FEE_PER_DAY);
+    }
+    
+    /**
+     * Lấy tháng hiện tại theo format "MM/yyyy"
+     */
+    public String getCurrentMonth(LocalDateTime dateTime) {
+        return dateTime.format(MONTH_FORMATTER);
+    }
+}
+
