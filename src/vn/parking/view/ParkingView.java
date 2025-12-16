@@ -48,14 +48,7 @@ public class ParkingView {
      * Nhập và validate biển số xe theo loại xe
      */
     public String inputLicensePlate(VehicleType type) {
-        // Xe đạp: Tự động sinh mã
-        if (type == VehicleType.BICYCLE) {
-            String autoPlate = generateBicyclePlate();
-            System.out.println("✓ Hệ thống tự động tạo mã định danh: " + autoPlate);
-            return autoPlate;
-        }
-        
-        // Xe máy và Ô tô: Yêu cầu nhập
+        // Yêu cầu nhập tay cho tất cả các loại xe (bao gồm cả xe đạp)
         while (true) {
             System.out.print("Nhập biển số xe: ");
             String rawInput = scanner.nextLine();
@@ -106,19 +99,16 @@ public class ParkingView {
                 return false;
             }
             return true;
+        } else if (type == VehicleType.BICYCLE) {
+            // Xe đạp: cho phép nhập tự do (chỉ cần ký tự chữ/số/gạch) để bảo vệ nhập lại mã cũ
+            if (!plate.matches("^[A-Z0-9-]{3,15}$")) {
+                System.out.println("❌ Mã xe đạp không hợp lệ (chỉ cho phép A-Z, 0-9, '-'; 3-15 ký tự).");
+                return false;
+            }
+            return true;
         }
         
         return false;
-    }
-    
-    /**
-     * Tự động sinh mã định danh cho xe đạp
-     */
-    private String generateBicyclePlate() {
-        // Format: BIKE-XXXXX (với X là số ngẫu nhiên)
-        Random random = new Random();
-        int randomNum = random.nextInt(99999);
-        return "BIKE-" + String.format("%05d", randomNum);
     }
     
     /**

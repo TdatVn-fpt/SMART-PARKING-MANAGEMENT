@@ -117,9 +117,8 @@ src/vn/parking/
 - **Ví dụ sai**: `30A12345` (thiếu gạch)
 
 #### Xe đạp (BICYCLE)
-- **Tự động**: Hệ thống tự động tạo mã định danh
-- **Format**: `BIKE-XXXXX` (với X là số ngẫu nhiên)
-- **Không cần nhập**: Chỉ cần chọn loại xe là Xe đạp
+- **Nhập tay mã xe**: Cho phép bảo vệ nhập mã/biển số cũ (A-Z, 0-9, `-`, 3-15 ký tự)
+- **Không còn tự động sinh**: Không tạo `BIKE-XXXXX` nữa
 
 ### Cách test giả lập thời gian
 

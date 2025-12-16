@@ -30,13 +30,18 @@ public class BillingService {
      * @return Tổng phí phải trả (VNĐ)
      */
     public long calculateFee(Vehicle vehicle, LocalDateTime checkoutTime, LocalDateTime entryTime) {
-        if (vehicle.hasMonthlyCard()) {
-            // Logic VÉ THÁNG: Chỉ thu 1 lần/tháng
-            return calculateMonthlyTicketFee(vehicle.getPlate(), checkoutTime);
-        } else {
-            // Logic VÉ LƯỢT
-            return calculateGuestTicketFee(entryTime, checkoutTime);
+        // Xe đạp: luôn miễn phí
+        if (vehicle.getType() == vn.parking.model.VehicleType.BICYCLE) {
+            return 0;
         }
+
+        if (vehicle.hasMonthlyCard()) {
+            // Logic VÉ THÁNG: Chỉ thu 1 lần/tháng (thực tế)
+            return calculateMonthlyTicketFee(vehicle.getPlate(), checkoutTime);
+        }
+
+        // Logic VÉ LƯỢT
+        return calculateGuestTicketFee(entryTime, checkoutTime);
     }
     
     /**
@@ -83,6 +88,33 @@ public class BillingService {
         }
         
         return (long)((totalDays - 1) * FEE_PER_DAY);
+    }
+
+    /**
+     * Tính phí cho Simulation, hỗ trợ logic vé tháng cộng dồn theo tháng + ngày lẻ
+     *
+     * @param vehicle      Xe cần tính phí
+     * @param monthsPassed Số tháng đã trôi qua (giả lập)
+     * @param extraDays    Số ngày lẻ đã trôi qua (giả lập)
+     * @param checkoutTime Thời điểm check-out giả lập (dùng để xác định tháng)
+     * @param entryTime    Thời điểm check-in giả lập
+     */
+    public long calculateSimulationFee(Vehicle vehicle, int monthsPassed, int extraDays,
+                                       LocalDateTime checkoutTime, LocalDateTime entryTime) {
+        // Xe đạp: luôn miễn phí
+        if (vehicle.getType() == vn.parking.model.VehicleType.BICYCLE) {
+            return 0;
+        }
+
+        if (vehicle.hasMonthlyCard()) {
+            // Phí tháng: kiểm tra đã đóng tháng hiện tại (theo checkoutTime) hay chưa
+            long monthlyFee = calculateMonthlyTicketFee(vehicle.getPlate(), checkoutTime);
+            long dailyFee = (long) extraDays * FEE_PER_DAY;
+            return monthlyFee + dailyFee;
+        }
+
+        // Vé lượt: giữ nguyên cách tính theo thời gian
+        return calculateGuestTicketFee(entryTime, checkoutTime);
     }
     
     /**

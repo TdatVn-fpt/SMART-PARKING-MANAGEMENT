@@ -185,11 +185,11 @@ public class ParkingService implements IParkingService {
         LocalDateTime fakeEntryTime = LocalDateTime.now().minusDays(totalDays);
         ticket.setEntryTime(fakeEntryTime);
         
-        // Giả lập checkoutTime: Lùi về quá khứ theo số tháng (để test vé tháng)
+        // Giả lập checkoutTime: Lùi về quá khứ theo số tháng/ngày nhập vào
         LocalDateTime fakeCheckoutTime = LocalDateTime.now().minusMonths(months).minusDays(days);
         
-        // Tính phí với logic mới (sử dụng fakeCheckoutTime cho vé tháng)
-        long fee = billingService.calculateFee(vehicle, fakeCheckoutTime, fakeEntryTime);
+        // Tính phí với logic mới cho Simulation (hỗ trợ vé tháng cộng dồn)
+        long fee = billingService.calculateSimulationFee(vehicle, months, days, fakeCheckoutTime, fakeEntryTime);
         
         // Nếu là vé tháng và phải thu tiền (fee > 0), cập nhật lịch sử đóng tiền
         if (vehicle.hasMonthlyCard() && fee > 0) {
