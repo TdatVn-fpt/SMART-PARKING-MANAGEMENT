@@ -56,12 +56,17 @@ src/vn/parking/
 ├── view/                # Giao diện Console và nhập liệu
 │   └── ParkingView.java
 ├── service/             # Logic nghiệp vụ
-│   ├── ParkingService.java
-│   └── BillingService.java
+│   ├── IParkingService.java      # Interface Service
+│   ├── ParkingService.java       # Triển khai IParkingService
+│   └── BillingService.java       # Tính toán phí
 ├── repository/          # Quản lý dữ liệu và File IO
-│   └── ParkingRepository.java
+│   ├── IRepository.java          # Interface Generic Repository<T>
+│   └── ParkingRepository.java    # Triển khai IRepository<Vehicle>
 ├── model/               # Entity classes
-│   ├── Vehicle.java
+│   ├── Vehicle.java              # Abstract class
+│   ├── Car.java                  # extends Vehicle
+│   ├── Motorbike.java            # extends Vehicle
+│   ├── Bicycle.java              # extends Vehicle
 │   ├── Ticket.java
 │   ├── ParkingSlot.java
 │   ├── VehicleType.java
@@ -76,7 +81,19 @@ src/vn/parking/
 - **view**: Xử lý giao diện console, validation, nhập liệu từ người dùng
 - **service**: Chứa logic nghiệp vụ (check-in, check-out, tính phí)
 - **repository**: Quản lý dữ liệu trong memory và lưu/đọc file CSV
-- **model**: Các entity classes đại diện cho dữ liệu
+- **model**: Các entity classes/abstract class đại diện cho dữ liệu
+
+### Áp dụng OOP (Abstract Class, Interface, Generics)
+
+- **Abstract Class**:
+  - `Vehicle` là `abstract class` chứa thông tin chung cho mọi phương tiện.
+  - Các lớp con: `Car`, `Motorbike`, `Bicycle` kế thừa `Vehicle` và **override** `getTypeName()` để trả về tên loại xe: `"Ô Tô"`, `"Xe Máy"`, `"Xe Đạp"`.
+- **Interface (Service)**:
+  - `IParkingService` định nghĩa các hành vi chính: `checkIn(Vehicle v)`, `checkOut(String plate)`, `getVehicleList()`.
+  - `ParkingService` **implements IParkingService**, toàn bộ logic check-in/check-out vẫn giữ nguyên, chỉ bổ sung `@Override`.
+- **Generics (Repository)**:
+  - `IRepository<T>` là interface generic với các hàm: `List<T> getAll()`, `void add(T item)`, `void remove(T item)`.
+  - `ParkingRepository` **implements IRepository<Vehicle>`, cài đặt các hàm này dựa trên `Map<String, Vehicle> vehicles`.
 
 ## 📖 Hướng dẫn sử dụng
 
@@ -171,9 +188,12 @@ Hệ thống tự động phân zone khi check-in:
 ## 💾 Lưu trữ dữ liệu
 
 - **File CSV**: `parking_data.csv` (tự động tạo trong thư mục gốc)
-- **Format**: `type,licensePlate,entryTime,fuelType,ticketType`
+- **Format**: `type,licensePlate,entryTime,fuelType,ticketType,lastPaidMonth`
 - **Tự động lưu**: Sau mỗi thao tác quan trọng (check-in, check-out)
 - **Tự động load**: Khi khởi động chương trình
+-
+- **File lịch sử thẻ tháng**: `monthly_history.csv`
+- **Format**: `LicensePlate,LastPaidMonth` (biển số + tháng gần nhất đã đóng, ví dụ: `11/2025`)
 
 ## 🛠️ Công nghệ sử dụng
 

@@ -3,7 +3,7 @@ package vn.parking.model;
 /**
  * Entity đại diện cho một phương tiện
  */
-public class Vehicle {
+public abstract class Vehicle {
     private String plate;           // Biển số xe
     private VehicleType type;       // Loại xe (CAR, BIKE, BICYCLE)
     private FuelType fuelType;      // Loại nhiên liệu (GASOLINE, ELECTRIC, NONE)
@@ -63,6 +63,11 @@ public class Vehicle {
     public void setLastPaidMonth(String lastPaidMonth) {
         this.lastPaidMonth = lastPaidMonth;
     }
+    
+    /**
+     * Trả về tên hiển thị của loại xe (ví dụ: "Xe Máy", "Ô Tô", "Xe Đạp")
+     */
+    public abstract String getTypeName();
     
     /**
      * Chuyển đổi Vehicle thành chuỗi CSV

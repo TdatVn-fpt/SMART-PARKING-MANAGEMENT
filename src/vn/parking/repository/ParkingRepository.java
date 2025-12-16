@@ -1,6 +1,7 @@
 package vn.parking.repository;
 
 import vn.parking.model.*;
+
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -9,7 +10,7 @@ import java.util.*;
 /**
  * Repository quản lý dữ liệu của hệ thống
  */
-public class ParkingRepository {
+public class ParkingRepository implements IRepository<Vehicle> {
     // Map lưu trữ ticket theo biển số xe
     private Map<String, Ticket> ticketsByPlate;
     
@@ -29,6 +30,34 @@ public class ParkingRepository {
         this.monthlyPaymentHistory = new HashMap<>();
     }
     
+    /**
+     * Triển khai IRepository<Vehicle> - trả về danh sách tất cả Vehicle
+     */
+    @Override
+    public List<Vehicle> getAll() {
+        return new ArrayList<>(vehicles.values());
+    }
+
+    /**
+     * Triển khai IRepository<Vehicle> - thêm một Vehicle mới
+     */
+    @Override
+    public void add(Vehicle item) {
+        if (item != null) {
+            saveVehicle(item);
+        }
+    }
+
+    /**
+     * Triển khai IRepository<Vehicle> - xóa một Vehicle
+     */
+    @Override
+    public void remove(Vehicle item) {
+        if (item != null) {
+            vehicles.remove(item.getPlate());
+        }
+    }
+
     /**
      * Lưu ticket vào repository
      */
@@ -283,8 +312,20 @@ public class ParkingRepository {
                         }
                     }
                     
-                    // Tạo Vehicle
-                    Vehicle vehicle = new Vehicle(plate, type, fuelType, isMonthly, lastPaidMonth);
+                    // Tạo Vehicle cụ thể dựa trên VehicleType
+                    Vehicle vehicle;
+                    switch (type) {
+                        case CAR:
+                            vehicle = new Car(plate, fuelType, isMonthly, lastPaidMonth);
+                            break;
+                        case BIKE:
+                            vehicle = new Motorbike(plate, fuelType, isMonthly, lastPaidMonth);
+                            break;
+                        case BICYCLE:
+                        default:
+                            vehicle = new Bicycle(plate, fuelType, isMonthly, lastPaidMonth);
+                            break;
+                    }
                     
                     // Parse entryTime (có thể rỗng nếu vehicle đã check-out)
                     String entryTimeStr = parts[2].trim();

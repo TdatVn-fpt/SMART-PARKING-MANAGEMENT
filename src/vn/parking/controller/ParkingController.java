@@ -85,8 +85,21 @@ public class ParkingController {
         String plate = view.inputLicensePlate(type);
         FuelType fuelType = view.inputFuelType(type);
         boolean hasMonthlyCard = view.inputMonthlyCard();
-        
-        Vehicle vehicle = new Vehicle(plate, type, fuelType, hasMonthlyCard);
+
+        // Tạo đối tượng Vehicle cụ thể theo loại xe
+        Vehicle vehicle;
+        switch (type) {
+            case CAR:
+                vehicle = new Car(plate, fuelType, hasMonthlyCard);
+                break;
+            case BIKE:
+                vehicle = new Motorbike(plate, fuelType, hasMonthlyCard);
+                break;
+            case BICYCLE:
+            default:
+                vehicle = new Bicycle(plate, fuelType, hasMonthlyCard);
+                break;
+        }
         Ticket ticket = parkingService.checkIn(vehicle);
         
         view.showCheckInSuccess(plate, ticket.getZone());

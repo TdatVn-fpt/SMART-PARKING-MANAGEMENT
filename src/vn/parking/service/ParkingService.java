@@ -2,13 +2,15 @@ package vn.parking.service;
 
 import vn.parking.model.*;
 import vn.parking.repository.ParkingRepository;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 
 /**
  * Service xử lý logic nghiệp vụ đỗ xe
  */
-public class ParkingService {
+public class ParkingService implements IParkingService {
     
     private ParkingRepository repository;
     private BillingService billingService;
@@ -45,6 +47,7 @@ public class ParkingService {
      * @param vehicle Xe vào
      * @return Ticket được tạo
      */
+    @Override
     public Ticket checkIn(Vehicle vehicle) {
         // Kiểm tra xe đã đỗ chưa (sử dụng chuẩn hóa để so sánh)
         if (repository.isVehicleParked(vehicle.getPlate())) {
@@ -104,6 +107,7 @@ public class ParkingService {
      * @param plate Biển số xe (đã được chuẩn hóa từ View)
      * @return Tổng phí phải trả
      */
+    @Override
     public long checkOut(String plate) {
         // Tìm ticket (plate đã được chuẩn hóa và trả về biển số gốc từ View)
         Ticket ticket = repository.findTicketByPlate(plate);
@@ -142,6 +146,15 @@ public class ParkingService {
         repository.removeTicket(plate);
         
         return fee;
+    }
+
+    /**
+     * Trả về danh sách tất cả phương tiện đang được quản lý
+     * (wrapper mỏng cho repository để tuân thủ IParkingService)
+     */
+    @Override
+    public Collection<Vehicle> getVehicleList() {
+        return repository.getAllVehicles();
     }
     
     /**
