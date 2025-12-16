@@ -54,7 +54,12 @@ public class BillingService {
         String currentMonth = checkoutTime.format(MONTH_FORMATTER);
         String recordedMonth = repository.getLastPaidMonth(plate); // Lấy từ sổ cái
         
-        // Trường hợp 1: Trùng khớp -> Đã đóng tiền tháng này
+        // Nếu file monthly_payment đã ghi nhận -> xem như đã đóng
+        if (repository.hasPaidMonthly(plate, currentMonth)) {
+            return 0;
+        }
+
+        // Trường hợp 1: Trùng khớp trong sổ cái cũ -> Đã đóng tiền tháng này
         if (currentMonth.equals(recordedMonth)) {
             return 0;
         }
@@ -107,14 +112,24 @@ public class BillingService {
         }
 
         if (vehicle.hasMonthlyCard()) {
-            // Phí tháng: kiểm tra đã đóng tháng hiện tại (theo checkoutTime) hay chưa
-            long monthlyFee = calculateMonthlyTicketFee(vehicle.getPlate(), checkoutTime);
-            long dailyFee = (long) extraDays * FEE_PER_DAY;
-            return monthlyFee + dailyFee;
+            // Vé tháng (Simulation):
+            // Bước 1: Nếu đã đóng vé tháng trong tháng này -> luôn 0 VNĐ
+            String currentMonth = checkoutTime.format(MONTH_FORMATTER);
+            if (repository.hasPaidMonthly(vehicle.getPlate(), currentMonth)) {
+                return 0;
+            }
+
+            // Bước 2: Chưa đóng -> Thu 50.000 VNĐ (một lần cho tháng này)
+            return MONTHLY_TICKET_FEE;
         }
 
-        // Vé lượt: giữ nguyên cách tính theo thời gian
-        return calculateGuestTicketFee(entryTime, checkoutTime);
+        // Vé lượt (Guest) trong Simulation:
+        // Tính theo tổng số ngày giả lập: Phí = TotalDays * 5.000 VNĐ
+        int totalDays = (monthsPassed * 30) + extraDays;
+        if (totalDays <= 0) {
+            return 0;
+        }
+        return (long) totalDays * FEE_PER_DAY;
     }
     
     /**

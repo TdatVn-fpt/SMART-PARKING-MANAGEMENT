@@ -22,6 +22,7 @@ public class ParkingRepository implements IRepository<Vehicle> {
     
     private static final String DEFAULT_FILENAME = "parking_data.csv";
     private static final String MONTHLY_HISTORY_FILENAME = "monthly_history.csv";
+    private static final String MONTHLY_PAYMENT_FILENAME = "monthly_payment.csv";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     public ParkingRepository() {
@@ -486,6 +487,66 @@ public class ParkingRepository implements IRepository<Vehicle> {
         }
         
         return null;
+    }
+
+    /**
+     * Kiểm tra một biển số đã đóng vé tháng cho một tháng cụ thể hay chưa
+     * Đọc từ file monthly_payment.csv với format: LicensePlate,MonthYear
+     */
+    public boolean hasPaidMonthly(String plate, String monthYear) {
+        if (plate == null || monthYear == null || plate.isEmpty() || monthYear.isEmpty()) {
+            return false;
+        }
+
+        File file = new File(MONTHLY_PAYMENT_FILENAME);
+        if (!file.exists()) {
+            return false;
+        }
+
+        String normalizedPlate = normalizePlate(plate);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line = reader.readLine(); // có thể là header
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                String[] parts = line.split(",");
+                if (parts.length < 2) continue;
+
+                String storedPlate = parts[0].trim();
+                String storedMonth = parts[1].trim();
+
+                if (normalizePlate(storedPlate).equals(normalizedPlate)
+                        && storedMonth.equals(monthYear)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("❌ Lỗi khi đọc file monthly_payment: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Lưu bản ghi đã đóng vé tháng vào file monthly_payment.csv
+     * Format: LicensePlate,MonthYear
+     */
+    public void saveMonthlyPayment(String plate, String monthYear) {
+        if (plate == null || monthYear == null || plate.isEmpty() || monthYear.isEmpty()) {
+            return;
+        }
+
+        File file = new File(MONTHLY_PAYMENT_FILENAME);
+        boolean writeHeader = !file.exists() || file.length() == 0;
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(file, true))) {
+            if (writeHeader) {
+                writer.println("LicensePlate,MonthYear");
+            }
+            writer.printf("%s,%s%n", plate, monthYear);
+        } catch (IOException e) {
+            System.err.println("❌ Lỗi khi ghi file monthly_payment: " + e.getMessage());
+        }
     }
 }
 

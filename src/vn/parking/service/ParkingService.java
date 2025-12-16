@@ -133,7 +133,8 @@ public class ParkingService implements IParkingService {
         // Nếu là vé tháng và phải thu tiền (fee > 0), cập nhật lịch sử đóng tiền
         if (vehicle.hasMonthlyCard() && fee > 0) {
             String currentMonth = billingService.getCurrentMonth(exitTime);
-            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử
+            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử (cũ)
+            repository.saveMonthlyPayment(plate, currentMonth);  // Lưu vào file monthly_payment.csv
         }
         
         // Lấy lastPaidMonth từ sổ cái để hiển thị
@@ -188,13 +189,14 @@ public class ParkingService implements IParkingService {
         // Giả lập checkoutTime: Lùi về quá khứ theo số tháng/ngày nhập vào
         LocalDateTime fakeCheckoutTime = LocalDateTime.now().minusMonths(months).minusDays(days);
         
-        // Tính phí với logic mới cho Simulation (hỗ trợ vé tháng cộng dồn)
+        // Tính phí với logic mới cho Simulation
         long fee = billingService.calculateSimulationFee(vehicle, months, days, fakeCheckoutTime, fakeEntryTime);
         
         // Nếu là vé tháng và phải thu tiền (fee > 0), cập nhật lịch sử đóng tiền
         if (vehicle.hasMonthlyCard() && fee > 0) {
             String currentMonth = billingService.getCurrentMonth(fakeCheckoutTime);
-            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử
+            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử (cũ)
+            repository.saveMonthlyPayment(plate, currentMonth);  // Lưu vào file monthly_payment.csv
         }
         
         LocalDateTime exitTime = LocalDateTime.now();
@@ -245,9 +247,9 @@ public class ParkingService implements IParkingService {
         // Nếu là vé tháng và phải thu tiền (parkingFee > 0), cập nhật lịch sử đóng tiền
         if (vehicle.hasMonthlyCard() && parkingFee > 0) {
             String currentMonth = billingService.getCurrentMonth(exitTime);
-            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử
+            repository.updatePaymentStatus(plate, currentMonth); // Lưu vào sổ cái lịch sử (cũ)
+            repository.saveMonthlyPayment(plate, currentMonth);  // Lưu vào file monthly_payment.csv
         }
-        
         // Tổng phí = Phạt mất vé + Phí đỗ xe
         long totalFee = LOST_TICKET_FINE + parkingFee;
         
