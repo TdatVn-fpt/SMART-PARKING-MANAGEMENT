@@ -190,7 +190,7 @@ Hệ thống tự động phân zone khi check-in:
 - Sử dụng chức năng Simulation để test tính năng phạt tiền mà không cần chờ 24h
 
 ## 👨‍💻 Tác giả
-
+Nguyen Tien Dat
 Smart Parking Management System - PRO192.M.BL5
 
 ---
